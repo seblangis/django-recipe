@@ -3,7 +3,11 @@ Database models
 """
 
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    BaseUserManager,
+    PermissionsMixin,
+)
 
 
 class UserManager(BaseUserManager):
@@ -18,7 +22,13 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
-        return self.create_user(email, password, is_staff=True, is_superuser=True, **extra_fields)
+        return self.create_user(
+            email,
+            password,
+            is_staff=True,
+            is_superuser=True,
+            **extra_fields
+        )
 
 
 class User(AbstractBaseUser, PermissionsMixin):
