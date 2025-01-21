@@ -1,6 +1,7 @@
 """
 Test custom Django management commands.
 """
+import io
 from unittest.mock import patch
 
 import psycopg2
@@ -15,7 +16,8 @@ class CommandTests(SimpleTestCase):
     def test_wait_for_db_ready(self, patched_check):
         patched_check.return_value = True
 
-        result = call_command("wait_for_db")
+        with patch('sys.stdout', new=io.StringIO()):
+            result = call_command("wait_for_db")
 
         patched_check.assert_called_once_with(databases=["default"])
         self.assertEqual(result, 0)
@@ -27,7 +29,8 @@ class CommandTests(SimpleTestCase):
                 [django.db.utils.OperationalError] * 3 + \
                 [True]
 
-        result = call_command("wait_for_db")
+        with patch('sys.stdout', new=io.StringIO()):
+            result = call_command("wait_for_db")
 
         self.assertEqual(patched_check.call_count, 6)
         self.assertEqual(patched_sleep.call_count, 5)
