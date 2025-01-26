@@ -21,6 +21,7 @@ from drf_spectacular.views import (
 )
 
 import user.urls
+import recipe.urls
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -34,5 +35,10 @@ urlpatterns = [
         'api/user/',
         include('user.urls'),
         name=user.urls.app_name
+    ),
+    path(
+        'api/recipes/',
+        include('recipe.urls'),
+        name=recipe.urls.app_name
     ),
 ]

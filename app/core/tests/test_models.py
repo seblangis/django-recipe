@@ -1,12 +1,13 @@
 """
 Tests for models.
 """
+from decimal import Decimal
 
 from django.test import TestCase
-from core.models import User
+from core.models import User, Recipe
 
 
-class ModelTests(TestCase):
+class UserModelTests(TestCase):
     def test_create_user_with_email_successful(self):
         email = "test@example.com"
         password = "test-password-123"
@@ -49,3 +50,21 @@ class ModelTests(TestCase):
 
         self.assertTrue(user.is_superuser)
         self.assertTrue(user.is_staff)
+
+
+class RecipeModelTests(TestCase):
+    def test_create_recipe(self):
+        user = User.objects.create_user(
+            'test@exampe.com',
+            'testpass123',
+        )
+
+        recipe = Recipe.objects.create(
+            user=user,
+            title='Sample recipe',
+            time_minutes=5,
+            price=Decimal('5.40'),
+            description='Sample recipe description',
+        )
+
+        self.assertEqual(str(recipe), 'Sample recipe')
