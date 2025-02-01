@@ -2,9 +2,10 @@
 Tests for models.
 """
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.test import TestCase
-from core.models import User, Recipe, Tag, Ingredient
+from core.models import User, Recipe, Tag, Ingredient, recipe_image_file_path
 
 
 def create_user(email='test@example', password='password123'):
@@ -92,3 +93,13 @@ class IngredientModelTest(TestCase):
         )
 
         self.assertEqual(str(ingredient), 'Sugar')
+
+
+@patch('core.models.uuid.uuid4')
+class ModelImageUploadTests(TestCase):
+    def test_recipe_file_name_uuid(self, mock_uuid):
+        uuid = 'test-uuid'
+        mock_uuid.return_value = uuid
+        file_path = recipe_image_file_path(None, 'example.jpg')
+
+        self.assertEqual(file_path, f'uploads/recipe/{uuid}.jpg')
