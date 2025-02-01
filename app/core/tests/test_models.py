@@ -4,7 +4,7 @@ Tests for models.
 from decimal import Decimal
 
 from django.test import TestCase
-from core.models import User, Recipe, Tag
+from core.models import User, Recipe, Tag, Ingredient
 
 
 def create_user(email='test@example', password='password123'):
@@ -80,3 +80,15 @@ class TagModelTest(TestCase):
         tag = Tag.objects.create(user=user, name='Tag1')
 
         self.assertEqual(str(tag), 'Tag1')
+
+
+class IngredientModelTest(TestCase):
+    def test_create_ingredient(self):
+        user = create_user()
+
+        ingredient = Ingredient.objects.create(
+            user=user,
+            name='Sugar',
+        )
+
+        self.assertEqual(str(ingredient), 'Sugar')

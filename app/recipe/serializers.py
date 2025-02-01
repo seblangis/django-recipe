@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from core.models import Recipe, Tag
+from core.models import Recipe, Tag, Ingredient
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -8,6 +8,13 @@ class TagSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tag
+        fields = ['id', 'name']
+        read_only_fields = ['id']
+
+
+class IngredientSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ingredient
         fields = ['id', 'name']
         read_only_fields = ['id']
 
@@ -54,4 +61,32 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 class RecipeDetailSerializer(RecipeSerializer):
     class Meta(RecipeSerializer.Meta):
-        fields = RecipeSerializer.Meta.fields + ['description']
+        fields = RecipeSerializer.Meta.fields + ['description', 'ingredients']
+
+    ingredients = IngredientSerializer(many=True, required=False)
+
+    def create(self, validated_data):
+        ingredients = validated_data.pop('ingredients', [])
+        recipe = super().create(validated_data)
+
+        self._get_or_create_ingredients(ingredients, recipe)
+
+        return recipe
+
+    def update(self, instance, validated_data):
+        ingredients = validated_data.pop('ingredients', None)
+
+        if ingredients is not None:
+            instance.ingredients.clear()
+            self._get_or_create_ingredients(ingredients, instance)
+
+        return super().update(instance, validated_data)
+
+    def _get_or_create_ingredients(self, ingredients, recipe):
+        authenticated_user = self.context['request'].user
+        for ingredient in ingredients:
+            ingredient_object, _created = Ingredient.objects.get_or_create(
+                user=authenticated_user,
+                **ingredient
+            )
+            recipe.ingredients.add(ingredient_object)

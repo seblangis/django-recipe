@@ -6,7 +6,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from core.models import Recipe, Tag
+from core.models import Recipe, Tag, Ingredient
 from recipe.serializers import (
     RecipeSerializer,
     RecipeDetailSerializer,
@@ -313,3 +313,80 @@ class PrivateRecipeApiTests(TestCase):
         self.client.patch(url, payload, format='json')
 
         self.assertEqual(len(recipe.tags.all()), 0)
+
+    def test_create_recipe_with_new_ingredients(self):
+        payload = {
+            'title': "Pâté chinois",
+            "time_minutes": 30,
+            "price": Decimal('15.40'),
+            'ingredients': [
+                {'name': 'steak'},
+                {'name': "blé d'inde"},
+                {'name': 'patate'},
+            ]
+        }
+
+        res = self.client.post(RECIPES_URL, payload, format='json')
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        recipe = Recipe.objects.first()
+        self.assertEqual(recipe.ingredients.count(), 3)
+        ingredients = Ingredient.objects.all().order_by('name')
+        self.assertEquals(ingredients[0].name, "blé d'inde")
+        self.assertEquals(ingredients[2].name, 'steak')
+        self.assertEquals(ingredients[2].user, self.user)
+
+    def test_create_recipe_with_existing_ingredients(self):
+        Ingredient.objects.create(user=self.user, name='patate')
+
+        payload = {
+            'title': "Pâté chinois",
+            "time_minutes": 30,
+            "price": Decimal('15.40'),
+            'ingredients': [
+                {'name': 'steak'},
+                {'name': "blé d'inde"},
+                {'name': 'patate'},
+            ]
+        }
+
+        self.client.post(RECIPES_URL, payload, format='json')
+
+        self.assertEqual(len(Ingredient.objects.all()), 3)
+
+    def test_create_ingredients_on_update(self):
+        recipe = create_recipe(user=self.user)
+
+        payload = {'ingredients': [{'name': 'Pepper'}]}
+        url = detail_url(recipe.id)
+        self.client.patch(url, payload, format='json')
+
+        self.assertEqual(len(recipe.ingredients.all()), 1)
+        self.assertEqual(recipe.ingredients.first().name, 'Pepper')
+
+    def test_assign_ingredients_to_recipe(self):
+        ingredient_salt = Ingredient.objects.create(
+            user=self.user,
+            name='Salt'
+        )
+        recipe = create_recipe(user=self.user)
+        recipe.ingredients.add(ingredient_salt)
+
+        Ingredient.objects.create(user=self.user, name='Pepper')
+        payload = {'ingredients': [{'name': 'Pepper'}]}
+        url = detail_url(recipe.id)
+        self.client.patch(url, payload, format='json')
+
+        self.assertEqual(len(recipe.ingredients.all()), 1)
+        self.assertEqual(recipe.ingredients.first().name, 'Pepper')
+
+    def test_clear_recipe_ingredients(self):
+        ingredient = Ingredient.objects.create(user=self.user, name='Butter')
+        recipe = create_recipe(user=self.user)
+        recipe.ingredients.add(ingredient)
+
+        payload = {'ingredients': []}
+        url = detail_url(recipe.id)
+        self.client.patch(url, payload, format='json')
+
+        self.assertEqual(len(recipe.ingredients.all()), 0)
